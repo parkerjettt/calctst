@@ -12,14 +12,9 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/api/iterator"
+	
+	"./costrecord"
 )
-
-type CostRecord struct {
-	Date   spanner.NullDate
-	Cost   float64
-	Amount int64
-}
-
 func sendSlackMessage(ctx context.Context, client *spanner.Client) {
 	// now := time.Now()
 
