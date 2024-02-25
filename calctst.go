@@ -12,16 +12,21 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/api/iterator"
-	
-	"./costrecord"
 )
-func sendSlackMessage(ctx context.Context, client *spanner.Client) {
+
+type CostRecord struct {
+	Date   spanner.NullDate
+	Cost   float64
+	Amount int64
+}
+
+func SendSlackMessage(ctx context.Context, client *spanner.Client) {
 	// now := time.Now()
 
-	runningTotalCost := getRunningTotalCostToDate(ctx, client)
-	runningTotalCostPerDate := getRunningTotalCostPerDate(ctx, client)
-	runningAverageCost := getRunningAverageCostToDate(ctx, client)
-	numMessagesProcessed := getNumMessagesProcessed(ctx, client)
+	runningTotalCost := GetRunningTotalCostToDate(ctx, client)
+	runningTotalCostPerDate := GetRunningTotalCostPerDate(ctx, client)
+	runningAverageCost := GetRunningAverageCostToDate(ctx, client)
+	numMessagesProcessed := GetNumMessagesProcessed(ctx, client)
 
 	output := strings.Builder{}
 	output.WriteString("```\n")
@@ -60,7 +65,7 @@ func sendSlackMessage(ctx context.Context, client *spanner.Client) {
 	// fmt.Println("Time taken to process and send message:", time.Since(now))
 }
 
-func getRunningTotalCostToDate(ctx context.Context, client *spanner.Client) float64 {
+func GetRunningTotalCostToDate(ctx context.Context, client *spanner.Client) float64 {
 	stmt := spanner.Statement{
 		SQL: `SELECT SUM(cost) AS running_total_cost FROM jet_tbl`,
 	}
@@ -79,7 +84,7 @@ func getRunningTotalCostToDate(ctx context.Context, client *spanner.Client) floa
 	return runningTotalCost.Float64
 }
 
-func getRunningTotalCostPerDate(ctx context.Context, client *spanner.Client) []CostRecord {
+func GetRunningTotalCostPerDate(ctx context.Context, client *spanner.Client) []CostRecord {
 	stmt := spanner.Statement{
 		SQL: `SELECT date, SUM(cost) AS total_cost FROM jet_tbl GROUP BY date ORDER BY date`,
 	}
@@ -104,7 +109,7 @@ func getRunningTotalCostPerDate(ctx context.Context, client *spanner.Client) []C
 
 	return runningTotalCostPerDate
 }
-func getRunningAverageCostToDate(ctx context.Context, client *spanner.Client) float64 {
+func GetRunningAverageCostToDate(ctx context.Context, client *spanner.Client) float64 {
 	stmt := spanner.Statement{
 		SQL: `SELECT AVG(cost) AS running_avg_cost FROM jet_tbl`,
 	}
@@ -123,7 +128,7 @@ func getRunningAverageCostToDate(ctx context.Context, client *spanner.Client) fl
 	return runningAverageCost.Float64
 }
 
-func getNumMessagesProcessed(ctx context.Context, client *spanner.Client) int64 {
+func GetNumMessagesProcessed(ctx context.Context, client *spanner.Client) int64 {
 	currentTimestamp := time.Now() // Get the current timestamp
 	stmt := spanner.Statement{
 		SQL: `SELECT COUNT(*) AS num_messages FROM jet_tbl WHERE TIMESTAMP(date) <= @currentTimestamp`,
